@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Library | HER GAZE</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CSS Variables (Synced with Index Backup) --- */
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1E1E1E;
+            --modal-bg: rgba(30, 30, 30, 0.95);
+            --text-main: #F4F4F4;
+            --text-muted: #A0A0A0;
+            --accent-color: #8E1636;
+            --gold: #D4AF37;
+            --font-serif: 'Cormorant Garamond', serif; 
+            --font-sans: 'Montserrat', sans-serif;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --shadow-soft: 0 10px 30px rgba(0,0,0,0.3);
+            --transition-smooth: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: var(--font-serif); overflow-x: hidden; opacity: 0; transition: opacity 0.8s ease; }
+        body.loaded { opacity: 1; }
+
+        #fluidBg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; opacity: 0.4; }
+
+        /* Page Transition */
+        body.loaded .page-content { opacity: 1; transform: translateY(0); }
+        .page-content { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease, transform 0.8s ease; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; }
+        a { text-decoration: none; color: inherit; transition: var(--transition-smooth); }
+
+        /* --- Header (Synced) --- */
+        header {
+            position: fixed; top: 0; width: 100%; background: rgba(18, 18, 18, 0.85); backdrop-filter: blur(12px);
+            z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 20px 0; transition: 0.3s ease;
+        }
+        nav { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-family: var(--font-serif); font-size: 1.8rem; font-weight: 700; letter-spacing: 1px; color: var(--text-main); }
+
+        .nav-right { display: flex; align-items: center; gap: 40px; }
+        .nav-links { display: flex; gap: 40px; list-style: none; }
+        .nav-links a { 
+            font-family: var(--font-sans); 
+            font-size: 0.8rem; 
+            letter-spacing: 1.5px; 
+            text-transform: uppercase; 
+            color: var(--text-muted); 
+            position: relative; 
+            font-weight: 400; 
+        }
+        .nav-links a::after { 
+            content: ''; 
+            position: absolute; 
+            bottom: -5px; 
+            left: 0; 
+            width: 0; 
+            height: 1px; 
+            background-color: var(--gold); 
+            transition: width 0.3s ease; 
+        }
+        .nav-links a:hover { color: var(--gold); }
+        .nav-links a:hover::after { width: 100%; }
+
+        .lang-switch { display: flex; gap: 10px; border: 1px solid rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; transition: 0.3s; }
+        .lang-switch:hover { border-color: var(--gold); }
+        .lang-switch span.active { color: var(--gold); font-weight: 600; }
+
+        /* --- Hero --- */
+        .library-hero { padding: 90px 0 10px; text-align: center; }
+        .library-hero h1 { font-family: var(--font-serif); font-size: 4rem; margin-bottom: 0.5rem; color: var(--gold); font-weight: 400; line-height: 1.1; text-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .library-hero p { color: var(--text-muted); max-width: 600px; margin: 0 auto; font-size: 1.1rem; font-family: var(--font-serif); }
+
+        .search-container { max-width: 400px; margin: 20px auto 0; position: relative; }
+        .search-container input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; padding: 12px 25px; color: white; font-family: var(--font-sans); transition: var(--transition-smooth); font-size: 0.9rem; }
+        .search-container input:focus { outline: none; border-color: var(--gold); background: rgba(255,255,255,0.1); box-shadow: 0 0 15px rgba(212, 175, 55, 0.1); }
+        .search-container input::placeholder { color: rgba(255,255,255,0.3); }
+
+        /* --- Tags Bar (Removed) --- */
+        .search-container { margin-bottom: 60px; }
+
+        .movie-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); 
+            gap: 40px; 
+            transition: opacity 0.3s ease; 
+        }
+
+        .archive-vault {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 24px;
+            padding: 60px 40px;
+            margin: 40px 0;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .archive-vault::before {
+            content: 'COLLECTION ARCHIVE';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-color);
+            padding: 0 20px;
+            font-size: 0.65rem;
+            letter-spacing: 3px;
+            color: var(--gold);
+            font-family: var(--font-sans);
+        }
+        
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideOutRight {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100px); }
+        }
+        @keyframes slideOutLeft {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(-100px); }
+        }
+
+        .movie-grid.animating-right .movie-card { animation: slideInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .movie-grid.animating-left .movie-card { animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .movie-grid.sliding-out-right .movie-card { animation: slideOutLeft 0.5s cubic-bezier(0.7, 0, 0.84, 0) both; }
+        .movie-grid.sliding-out-left .movie-card { animation: slideOutRight 0.5s cubic-bezier(0.7, 0, 0.84, 0) both; }
+        
+        .movie-grid .movie-card:nth-child(1) { animation-delay: 0.05s; }
+        .movie-grid .movie-card:nth-child(2) { animation-delay: 0.1s; }
+        .movie-grid .movie-card:nth-child(3) { animation-delay: 0.15s; }
+        .movie-grid .movie-card:nth-child(4) { animation-delay: 0.2s; }
+        .movie-grid .movie-card:nth-child(5) { animation-delay: 0.25s; }
+        .movie-grid .movie-card:nth-child(6) { animation-delay: 0.3s; }
+        .movie-grid .movie-card:nth-child(7) { animation-delay: 0.35s; }
+        .movie-grid .movie-card:nth-child(8) { animation-delay: 0.4s; }
+
+        /* --- Pagination --- */
+        .pagination { display: flex; justify-content: center; gap: 10px; margin: 40px 0 100px; }
+        .page-btn {
+            background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted);
+            padding: 10px 18px; border-radius: 4px; cursor: pointer; transition: all 0.3s ease;
+            font-family: var(--font-sans); font-size: 0.85rem;
+        }
+        .page-btn:hover { border-color: var(--gold); color: var(--gold); }
+        .page-btn.active { background: var(--gold); border-color: var(--gold); color: #121212; font-weight: 600; }
+        .page-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+        .movie-card {
+            position: relative; border-radius: 15px; overflow: hidden; aspect-ratio: 2/3; 
+            cursor: pointer; transition: var(--transition-smooth); background: #1a1a1a;
+            box-shadow: var(--shadow-soft);
+        }
+        .movie-card.hidden { opacity: 0; transform: scale(0.9); pointer-events: none; display: none; }
+        .movie-card:hover { transform: translateY(-12px); box-shadow: 0 25px 50px rgba(0,0,0,0.7); }
+        .movie-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s cubic-bezier(0.2, 1, 0.2, 1); }
+        .movie-card:hover img { transform: scale(1.12); }
+        
+        .movie-info {
+            position: absolute; bottom: 0; left: 0; width: 100%; padding: 25px;
+            background: linear-gradient(to top, rgba(0,0,0,0.95), transparent);
+            transform: translateY(10px); opacity: 0; transition: 0.4s;
+        }
+        .movie-card:hover .movie-info { transform: translateY(0); opacity: 1; }
+        .movie-info h3 { font-size: 1.4rem; color: #fff; margin-bottom: 5px; font-family: var(--font-serif); }
+        .movie-info p { font-size: 0.75rem; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-sans); }
+
+        /* --- Modal (Synced) --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); z-index: 2000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: 0.4s; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-card { background: #1A1A1A; width: 90%; max-width: 800px; height: 500px; border-radius: 20px; overflow: hidden; display: grid; grid-template-columns: 1fr 1.2fr; transform: scale(0.95) translateY(20px); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(255,255,255,0.1); }
+        .modal-overlay.active .modal-card { transform: scale(1) translateY(0); }
+        .modal-img { width: 100%; height: 100%; object-fit: cover; background: #000; }
+        .modal-body { height: 500px; overflow: hidden; position: relative; display: block; padding: 0; }
+        .modal-scroll-area { height: 100%; overflow-y: auto; padding: 50px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-start; }
+        .modal-scroll-area::-webkit-scrollbar { width: 4px; }
+        .modal-scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .modal-scroll-area::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 10px; }
+        .modal-scroll-area:hover::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.6); }
+        .modal-close { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: rgba(0,0,0,0.5); border-radius: 50%; border: none; color: #fff; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; transition: 0.3s; }
+        .modal-close:hover { background: var(--gold); color: #000; transform: rotate(90deg); }
+        .modal-title { font-size: 2.8rem; color: var(--gold); margin-bottom: 10px; font-family: var(--font-serif); }
+        .modal-meta { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 30px; letter-spacing: 2px; font-family: var(--font-sans); }
+        .modal-desc { font-size: 1.15rem; line-height: 1.8; color: #ddd; font-family: var(--font-serif); }
+
+        footer { border-top: 1px solid rgba(255,255,255,0.05); padding: 80px 0; text-align: center; background: #0f0f0f; }
+        .copyright { color: #444; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        @media (max-width: 768px) {
+            .modal-card { grid-template-columns: 1fr; max-height: 90vh; overflow-y: auto; }
+            .modal-img { height: 300px; }
+            .library-hero h1 { font-size: 3rem; }
+            .nav-links { display: none; }
+        }
+
+        /* Admin Panel Styles - Minimalist Refined */
+        .admin-trigger { position: absolute; bottom: 0; right: 20px; padding: 10px; transition: opacity 0.3s; }
+        .admin-trigger:hover { opacity: 1; }
+        .admin-controls { display: none; position: absolute; top: 12px; right: 12px; gap: 8px; z-index: 30; }
+        body.is-admin .admin-controls { display: flex; }
+        .admin-btn { background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); color: var(--gold); width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .admin-btn:hover { background: var(--gold); color: #000; border-color: var(--gold); transform: translateY(-2px); }
+        .admin-btn svg { width: 16px; height: 16px; stroke-width: 2.5; }
+        
+        .admin-badge { display: none; position: fixed; top: 20px; right: 20px; background: #000; color: var(--gold); padding: 10px 20px; border-radius: 40px; font-size: 0.75rem; font-weight: bold; z-index: 9999; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid var(--gold); align-items: center; gap: 15px; }
+        body.is-admin .admin-badge { display: flex; }
+        .admin-exit-btn { background: var(--gold); color: #000; border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 0.65rem; transition: all 0.3s; font-weight: bold; }
+        .admin-exit-btn:hover { background: #fff; transform: scale(1.05); }
+
+        /* Delete Button - Repositioned to avoid clipping */
+        .admin-delete-btn { position: absolute; top: 12px; left: 12px; width: 28px; height: 28px; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); color: #fff; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); z-index: 30; transition: all 0.3s; }
+        body.is-admin .admin-delete-btn { display: flex; }
+        .admin-delete-btn:hover { background: #ff4444; border-color: #ff4444; transform: scale(1.1); box-shadow: 0 0 15px rgba(255, 68, 68, 0.4); }
+        .admin-delete-btn svg { width: 14px; height: 14px; stroke-width: 3; }
+
+        /* Animation States */
+        .movie-card.removing { opacity: 0 !important; transform: scale(0.8) translateY(20px) !important; pointer-events: none; }
+        .movie-card { transition: transform 0.5s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.5s; }
+
+        .admin-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
+        .admin-modal.active { display: flex; }
+        .admin-modal-content { background: #111; padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.08); text-align: center; max-width: 400px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .admin-modal h3 { margin-bottom: 25px; font-family: var(--font-serif); font-style: italic; color: var(--gold); font-size: 1.5rem; letter-spacing: 1px; }
+        .admin-modal input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; width: 100%; margin-bottom: 25px; text-align: center; font-size: 1.4rem; letter-spacing: 6px; border-radius: 12px; outline: none; transition: all 0.3s; }
+        .admin-modal input:focus { border-color: var(--gold); background: rgba(255,255,255,0.05); box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1); }
+        .admin-modal .admin-modal-btns { display: flex; gap: 12px; }
+        .admin-modal button { flex: 1; padding: 14px; cursor: pointer; border: none; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; border-radius: 12px; font-size: 0.8rem; transition: all 0.3s; }
+        .btn-submit { background: var(--gold); color: #000; }
+        .btn-submit:hover { transform: translateY(-2px); background: #e5bd3d; box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2); }
+        .btn-cancel { background: rgba(255,255,255,0.05); color: #888; }
+        .btn-cancel:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        .admin-delete-btn { position: absolute; top: -10px; left: -10px; width: 28px; height: 28px; background: #ff4444; color: #fff; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; border: 2px solid #000; z-index: 30; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.3s; }
+        body.is-admin .admin-delete-btn { display: flex; }
+        .admin-delete-btn:hover { background: #ff0000; transform: scale(1.1); box-shadow: 0 0 15px rgba(255, 0, 0, 0.4); }
+        .admin-delete-btn svg { width: 14px; height: 14px; }
+
+        /* Animation States */
+        .movie-card.removing { opacity: 0 !important; transform: scale(0.8) translateY(20px) !important; pointer-events: none; }
+        .movie-card { transition: transform 0.5s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.5s; }
+
+        body.is-admin .movie-card { transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.3s; cursor: grab; }
+        .movie-card.dragging { opacity: 0.2 !important; transform: scale(0.95); cursor: grabbing; }
+    </style>
+</head>
+<body>
+    <canvas id="fluidBg"></canvas>
+
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo"><a href="index.html#hero">HER GAZE</a></div>
+                <div class="nav-right">
+                    <ul class="nav-links">
+                        <li><a href="index.html#about">Manifesto</a></li>
+                        <li><a href="index.html#themes">Themes</a></li>
+                        <li><a href="index.html#directors">Visionaries</a></li>
+                        <li><a href="index.html#recommended">Recommended</a></li> 
+                        <li><a href="recommendations.html">Library</a></li> 
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <div class="page-content">
+        <main class="container">
+            <section class="library-hero">
+                <h1 id="archive-title" data-i18n="lib_title">The Film Archive</h1>
+                <div class="search-container">
+                    <input type="text" id="movieSearch" placeholder="Search films..." data-i18n="search_placeholder">
+                </div>
+            </section>
+
+            <!-- Tags Removed -->
+
+            <div class="archive-vault">
+                <div class="movie-grid" id="movieGrid">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </main>
+
+        <footer>
+            <div class="container" style="position: relative;">
+                <p class="copyright" data-i18n="copyright">© 2024 HER GAZE Project. Celebrating Women in Cinema.</p>
+                <!-- Admin Trigger -->
+                <div class="admin-trigger" onclick="promptAdmin()" title="Admin Mode">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.3; cursor: pointer;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Admin Modals -->
+    <div id="movieFormModal" class="admin-modal">
+        <div class="admin-modal-content" style="max-width: 500px;">
+            <h3 id="formModalTitle">Add to Archive</h3>
+            <input type="hidden" id="editMovieId">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;">
+                <div class="form-group">
+                    <label style="color: var(--gold); font-size: 0.7rem; text-transform: uppercase;">Title (EN)</label>
+                    <input type="text" id="newTitle" placeholder="e.g. Portrait of a Lady on Fire" style="font-size: 0.9rem; letter-spacing: 0; padding: 10px; margin-top: 5px;">
+                </div>
+                <div class="form-group">
+                    <label style="color: var(--gold); font-size: 0.7rem; text-transform: uppercase;">Title (CN)</label>
+                    <input type="text" id="newTitleCn" placeholder="e.g. 燃烧女子的肖像" style="font-size: 0.9rem; letter-spacing: 0; padding: 10px; margin-top: 5px;">
+                </div>
+                <div class="form-group">
+                    <label style="color: var(--gold); font-size: 0.7rem; text-transform: uppercase;">Director</label>
+                    <input type="text" id="newDir" placeholder="Céline Sciamma" style="font-size: 0.9rem; letter-spacing: 0; padding: 10px; margin-top: 5px;">
+                </div>
+                <div class="form-group">
+                    <label style="color: var(--gold); font-size: 0.7rem; text-transform: uppercase;">Year</label>
+                    <input type="text" id="newYear" placeholder="2019" style="font-size: 0.9rem; letter-spacing: 0; padding: 10px; margin-top: 5px;">
+                </div>
+            </div>
+            <div class="form-group" style="text-align: left; margin-top: 15px;">
+                <label style="color: var(--gold); font-size: 0.7rem; text-transform: uppercase;">Poster Image URL</label>
+                <input type="text" id="newImg" placeholder="images/poster.jpg or https://..." style="font-size: 0.9rem; letter-spacing: 0; padding: 10px; margin-top: 5px;">
+            </div>
+            <div class="form-group" style="text-align: left; margin-top: 15px;">
+                <label style="color: var(--gold); font-size: 0.7rem; text-transform: uppercase;">Description</label>
+                <textarea id="newDesc" placeholder="Briefly describe the cinematic significance..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px; border-radius: 12px; height: 80px; margin-top: 5px; font-family: var(--font-serif); font-size: 0.95rem; outline: none;"></textarea>
+            </div>
+            
+            <div class="form-group" style="text-align: left; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+                <label style="color: var(--gold); font-size: 0.7rem; text-transform: uppercase; margin-bottom: 10px; display: block;">Cinema Themes</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: rgba(255,255,255,0.6); cursor: pointer;"><input type="checkbox" name="movieTheme" value="theme_special"> Maternal Bonds</label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: rgba(255,255,255,0.6); cursor: pointer;"><input type="checkbox" name="movieTheme" value="theme_unruly"> The Unruly Woman</label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: rgba(255,255,255,0.6); cursor: pointer;"><input type="checkbox" name="movieTheme" value="theme_domestic"> Domestic Battlegrounds</label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: rgba(255,255,255,0.6); cursor: pointer;"><input type="checkbox" name="movieTheme" value="theme_body"> Reclaiming the Body</label>
+                </div>
+            </div>
+
+            <div class="admin-modal-btns" style="margin-top: 25px;">
+                <button class="btn-cancel" onclick="closeFormModal()">Cancel</button>
+                <button class="btn-submit" onclick="saveMovie()">Save Cinema Entry</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminModal" class="admin-modal">
+        <div class="admin-modal-content">
+            <h3>Library Administration</h3>
+            <input type="password" id="adminPw" placeholder="••••••" onkeydown="if(event.key==='Enter') checkAdminPw()">
+            <div class="admin-modal-btns">
+                <button class="btn-cancel" onclick="closeAdminModal()">Cancel</button>
+                <button class="btn-submit" onclick="checkAdminPw()">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteConfirmModal" class="admin-modal">
+        <div class="admin-modal-content">
+            <h3>Remove from Archive</h3>
+            <p style="color: rgba(255,255,255,0.6); margin-bottom: 25px; font-family: var(--font-sans); font-size: 0.9rem;">Are you sure you want to remove this film from the library archive?</p>
+            <div class="admin-modal-btns">
+                <button class="btn-cancel" onclick="closeDeleteModal()">Keep it</button>
+                <button class="btn-submit" style="background: #ff4444; color: #fff;" onclick="confirmDelete()">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div id="notificationModal" class="admin-modal">
+        <div class="admin-modal-content" style="max-width: 350px; text-align: center;">
+            <h3 id="notificationTitle" style="color: var(--gold); margin-bottom: 15px; font-size: 1.1rem;">Success</h3>
+            <p id="notificationMsg" style="color: rgba(255,255,255,0.8); margin-bottom: 25px; font-family: var(--font-sans); font-size: 0.9rem;">Changes saved successfully.</p>
+            <button class="btn-submit" onclick="closeNotification()" style="width: 100%;">OK</button>
+        </div>
+    </div>
+
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-card">
+            <div class="modal-img-container" style="background: #000;">
+                <img id="modalImg" src="" alt="" class="modal-img">
+            </div>
+            <div class="modal-body">
+                <div class="modal-scroll-area">
+                    <div id="modalContentWrapper" style="width: 100%;">
+                        <h3 id="modalTitle" class="modal-title">Title</h3>
+                        <div id="modalMeta" class="modal-meta">DIRECTOR • YEAR</div>
+                        <p id="modalDesc" class="modal-desc">Description</p>
+                    </div>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModalDirect()">&times;</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Airtable Configuration ---
+        const AIRTABLE_BASE_ID = 'appRgmbdpnRc7ZtdT';
+        const AIRTABLE_TABLE_NAME = 'Films';
+        const AIRTABLE_TOKEN = 'patJ6NrMkKGfsawgx.649954cbb8b1b97e139af2b02e370924781bada96823a97dec289316c00997a8';
+
+        let movies = [];
+        const translations = {
+            nav_manifesto: "Manifesto", nav_themes: "Themes", nav_directors: "Visionaries", nav_recommended: "Recommended", nav_library: "Library",
+            lib_title: "The Film Archive",
+            search_placeholder: "Search films by name...",
+            filter_all: "All Films", filter_unruly: "Unruly Women", filter_domestic: "Domestic", filter_body: "Body Sovereignty",
+            copyright: "2026 HER GAZE PROJECT ｜ BROOKE"
+        };
+
+        // --- Local Films Data (Same as index.html) ---
+        const LOCAL_FILMS_REGISTRY = [
+            {
+                "id": "Delphine and Carole",
+                "img": "images/delphine.jpg",
+                "year": "2019",
+                "dir": "Callisto McNulty",
+                "title": "Delphine and Carole",
+                "title_cn": "德菲因与卡罗尔：反叛缪斯",
+                "desc": "In the 70s and 80s, activist Carole Roussopoulos and actress Delphine Seyrig made use of new video technologies to fight for the women's movement. Archive material documents their interventions into the events of the time."
+            },
+            {
+                "id": "orlando",
+                "img": "images/orlando.jpg",
+                "year": "1992",
+                "dir": "Sally Potter",
+                "title": "Orlando",
+                "title_cn": "奥兰多",
+                "desc": "A visual masterpiece of gender fluidity across 400 years."
+            },
+            {
+                "id": "daisies",
+                "img": "images/daisies.jpg",
+                "year": "1966",
+                "dir": "Věra Chytilová",
+                "title": "Daisies",
+                "title_cn": "雏菊",
+                "desc": "An anarchic, surrealist rebellion against societal norms."
+            }
+        ];
+
+        let currentPage = 1;
+        const itemsPerPage = 8;
+        let currentSearch = new URLSearchParams(window.location.search).get('search') || '';
+
+        async function init() {
+            // Set search input value if param exists
+            if (currentSearch) {
+                const searchInput = document.getElementById('movieSearch');
+                if (searchInput) searchInput.value = currentSearch;
+            }
+
+            // 1. Start with local registry
+            movies = [...LOCAL_FILMS_REGISTRY];
+
+            // 2. Try to fetch Airtable
+            try {
+                const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}?sort%5B0%5D%5Bfield%5D=Release+Year&sort%5B0%5D%5Bdirection%5D=desc`;
+                const response = await fetch(url, {
+                    headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.records && data.records.length > 0) {
+                        const airtableMovies = data.records.map(record => ({
+                            id: record.fields['Movie ID'] || record.id,
+                            title: record.fields['Movie Title'] || 'Untitled',
+                            title_cn: record.fields['Title CN'] || '',
+                            img: record.fields['Image URL'] || '',
+                            year: record.fields['Release Year'] || '',
+                            dir: record.fields['Director'] || '',
+                            desc: record.fields['Description'] || ''
+                        }));
+                        // Merge: Add Airtable movies to the beginning
+                        movies = [...airtableMovies, ...movies];
+                    }
+                }
+            } catch (error) {
+                console.warn("Airtable fetch failed.");
+            }
+
+            // 3. Optional: Try local movies.json
+            try {
+                const localRes = await fetch('movies.json');
+                const localData = await localRes.json();
+                movies = localData;
+            } catch (err) { console.error("Local data load failed", err); }
+
+            // 3. Merge Custom Local Storage Movies (Overrides originals by ID)
+            const customMovies = JSON.parse(localStorage.getItem('customMovies') || '[]');
+            const movieMap = new Map();
+            movies.forEach(m => movieMap.set(m.id, m));
+            customMovies.forEach(m => movieMap.set(m.id, m));
+            movies = Array.from(movieMap.values());
+
+            // 4. Apply Blacklist (Prevent deleted movies from returning)
+            const deleted = JSON.parse(localStorage.getItem('deletedFromArchive') || '[]');
+            movies = movies.filter(m => !deleted.includes(m.id));
+
+            // 5. Deduplicate (Final Guard)
+            const uniqueMap = new Map();
+            movies.forEach(m => {
+                if (!uniqueMap.has(m.id)) uniqueMap.set(m.id, m);
+            });
+            movies = Array.from(uniqueMap.values());
+
+            // 5. Apply saved order
+            const savedOrder = localStorage.getItem('libraryOrder');
+            if (savedOrder) {
+                const orderIds = JSON.parse(savedOrder);
+                movies.sort((a, b) => {
+                    const idxA = orderIds.indexOf(a.id);
+                    const idxB = orderIds.indexOf(b.id);
+                    if (idxA === -1 && idxB === -1) return 0;
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                });
+            }
+
+            updateContent();
+            renderMovies();
+        }
+
+        let isAdmin = false;
+        function promptAdmin() {
+            document.getElementById('adminModal').classList.add('active');
+            document.getElementById('adminPw').focus();
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').classList.remove('active');
+            document.getElementById('adminPw').value = '';
+        }
+
+        function exitAdmin() {
+            isAdmin = false;
+            document.body.classList.remove('is-admin');
+            const badge = document.querySelector('.admin-badge');
+            if (badge) badge.remove();
+            renderMovies();
+            showNotification("Exited Admin Mode. Library changes saved.");
+        }
+
+        function closeNotification() {
+            document.getElementById('notificationModal').classList.remove('active');
+        }
+        function showNotification(msg, title = "Success") {
+            document.getElementById('notificationTitle').innerText = title;
+            document.getElementById('notificationMsg').innerText = msg;
+            document.getElementById('notificationModal').classList.add('active');
+        }
+
+        function checkAdminPw() {
+            const pw = document.getElementById('adminPw').value;
+            if (pw === "619326") {
+                isAdmin = true;
+                document.body.classList.add('is-admin');
+                const badge = document.createElement('div');
+                badge.className = 'admin-badge';
+                badge.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <span>Library Admin Active</span>
+                        <div style="width: 1px; height: 15px; background: rgba(255,255,255,0.2);"></div>
+                        <button class="admin-exit-btn" style="background: transparent; color: var(--gold); border: 1px solid var(--gold);" onclick="openFormModal()">+ Add New Film</button>
+                        <button class="admin-exit-btn" onclick="exitAdmin()">Exit & Save</button>
+                    </div>
+                `;
+                document.body.appendChild(badge);
+                renderMovies();
+                closeAdminModal();
+            } else {
+                alert("Incorrect password.");
+                document.getElementById('adminPw').value = '';
+            }
+        }
+
+        let movieToDeleteId = null;
+        function deleteMovie(e, id) {
+            e.stopPropagation();
+            movieToDeleteId = id;
+            document.getElementById('deleteConfirmModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            movieToDeleteId = null;
+            document.getElementById('deleteConfirmModal').classList.remove('active');
+        }
+
+        function openFormModal(movieObj = null) {
+            const modal = document.getElementById('movieFormModal');
+            const title = document.getElementById('formModalTitle');
+            const idInput = document.getElementById('editMovieId');
+            
+            if (movieObj) {
+                title.innerText = "Edit Archive Entry";
+                idInput.value = movieObj.id;
+                document.getElementById('newTitle').value = movieObj.title || '';
+                document.getElementById('newTitleCn').value = movieObj.title_cn || '';
+                document.getElementById('newDir').value = movieObj.dir || '';
+                document.getElementById('newYear').value = movieObj.year || '';
+                document.getElementById('newImg').value = movieObj.img || '';
+                document.getElementById('newDesc').value = movieObj.desc || '';
+                
+                // Populate checkboxes
+                const savedThemes = movieObj.themes || [];
+                document.querySelectorAll('input[name="movieTheme"]').forEach(cb => {
+                    cb.checked = savedThemes.includes(cb.value);
+                });
+            } else {
+                title.innerText = "Add to Archive";
+                idInput.value = '';
+                ['newTitle', 'newTitleCn', 'newDir', 'newYear', 'newImg', 'newDesc'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+                document.querySelectorAll('input[name="movieTheme"]').forEach(cb => cb.checked = false);
+            }
+            modal.classList.add('active');
+        }
+
+        function closeFormModal() {
+            document.getElementById('movieFormModal').classList.remove('active');
+        }
+
+        function saveMovie() {
+            const editId = document.getElementById('editMovieId').value;
+            const movieData = {
+                id: editId || 'custom-' + Date.now(),
+                title: document.getElementById('newTitle').value || 'Untitled',
+                title_cn: document.getElementById('newTitleCn').value || '',
+                dir: document.getElementById('newDir').value || 'Unknown',
+                year: document.getElementById('newYear').value || 'N/A',
+                img: document.getElementById('newImg').value || 'images/placeholder.jpg',
+                desc: document.getElementById('newDesc').value || '',
+                themes: Array.from(document.querySelectorAll('input[name="movieTheme"]:checked')).map(cb => cb.value)
+            };
+
+            const customMovies = JSON.parse(localStorage.getItem('customMovies') || '[]');
+            if (editId) {
+                const idx = customMovies.findIndex(m => m.id === editId);
+                if (idx !== -1) customMovies[idx] = movieData;
+                else customMovies.push(movieData);
+                
+                const localIdx = movies.findIndex(m => m.id === editId);
+                if (localIdx !== -1) movies[localIdx] = movieData;
+            } else {
+                customMovies.push(movieData);
+                movies.unshift(movieData);
+            }
+            
+            localStorage.setItem('customMovies', JSON.stringify(customMovies));
+            renderMovies();
+            closeFormModal();
+            showNotification(editId ? "Entry updated successfully!" : "New archive entry added successfully!");
+        }
+
+        function closeDeleteModal() {
+            movieToDeleteId = null;
+            const modal = document.getElementById('deleteConfirmModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function confirmDelete() {
+            if (!movieToDeleteId) {
+                closeDeleteModal();
+                return;
+            }
+            
+            const targetId = movieToDeleteId;
+            const card = document.getElementById(targetId);
+            
+            closeDeleteModal();
+
+            if (card) {
+                card.classList.add('removing');
+                setTimeout(() => {
+                    // 1. Update Blacklist
+                    const deleted = JSON.parse(localStorage.getItem('deletedFromArchive') || '[]');
+                    if (!deleted.includes(targetId)) {
+                        deleted.push(targetId);
+                        localStorage.setItem('deletedFromArchive', JSON.stringify(deleted));
+                    }
+
+                    // 2. Data Deletion
+                    movies = movies.filter(m => m.id !== targetId);
+                    
+                    // Sync customMovies
+                    const customMovies = JSON.parse(localStorage.getItem('customMovies') || '[]');
+                    const filteredCustom = customMovies.filter(m => m.id !== targetId);
+                    localStorage.setItem('customMovies', JSON.stringify(filteredCustom));
+
+                    localStorage.setItem('libraryOrder', JSON.stringify(movies.map(m => m.id)));
+                    renderMovies();
+                }, 500);
+            }
+        }
+
+        function moveMovie(e, id, direction) {
+            e.stopPropagation();
+            const index = movies.findIndex(m => m.id === id);
+            if (index === -1) return;
+            const newIndex = direction === 'left' ? index - 1 : index + 1;
+            if (newIndex < 0 || newIndex >= movies.length) return;
+            
+            const temp = movies[index];
+            movies[index] = movies[newIndex];
+            movies[newIndex] = temp;
+            
+            localStorage.setItem('libraryOrder', JSON.stringify(movies.map(m => m.id)));
+            renderMovies();
+        }
+
+        // --- Drag and Drop Logic ---
+        let draggedId = null;
+
+        function handleDragStart(e, id) {
+            if (!isAdmin) return;
+            draggedId = id;
+            e.currentTarget.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            if (!isAdmin) return;
+            e.preventDefault();
+            const target = e.currentTarget;
+            if (target.id === draggedId) return;
+            const rect = target.getBoundingClientRect();
+            const midpoint = rect.left + rect.width / 2;
+            if (e.clientX < midpoint) {
+                target.style.transform = 'translateX(10px)';
+            } else {
+                target.style.transform = 'translateX(-10px)';
+            }
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.style.transform = 'translateX(0)';
+        }
+
+        function handleDrop(e, targetId) {
+            if (!isAdmin || draggedId === targetId) return;
+            e.preventDefault();
+            const target = e.currentTarget;
+            const rect = target.getBoundingClientRect();
+            const midpoint = rect.left + rect.width / 2;
+            const fromIndex = movies.findIndex(m => m.id === draggedId);
+            let toIndex = movies.findIndex(m => m.id === targetId);
+            if (e.clientX > midpoint) toIndex++;
+            if (fromIndex !== -1 && toIndex !== -1) {
+                const [movedItem] = movies.splice(fromIndex, 1);
+                const finalToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
+                movies.splice(finalToIndex, 0, movedItem);
+                localStorage.setItem('libraryOrder', JSON.stringify(movies.map(m => m.id)));
+                renderMovies();
+            }
+        }
+
+        function handleDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            draggedId = null;
+            document.querySelectorAll('.movie-card').forEach(c => c.style.transform = 'translateX(0)');
+        }
+
+        function updateContent() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[key]) {
+                    if (el.tagName === 'INPUT') el.placeholder = translations[key];
+                    else el.innerText = translations[key];
+                }
+            });
+            renderMovies();
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'cn' : 'en';
+            localStorage.setItem('siteLang', currentLang);
+            updateContent();
+        }
+
+        let selectedTags = [];
+
+        function renderMovies(direction = 'right') {
+            const grid = document.getElementById('movieGrid');
+            if (!grid) return;
+            
+            // Apply slide-out animation to current cards
+            grid.className = `movie-grid sliding-out-${direction}`;
+            
+            setTimeout(() => {
+                grid.innerHTML = '';
+                grid.className = `movie-grid animating-${direction}`;
+                
+                const filtered = movies.filter(m => {
+                    const title = m.title.toLowerCase();
+                    const matchesSearch = title.includes(currentSearch.toLowerCase());
+                    return matchesSearch;
+                });
+
+                const totalPages = Math.ceil(filtered.length / itemsPerPage);
+                if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+
+                const start = (currentPage - 1) * itemsPerPage;
+                const end = start + itemsPerPage;
+                const pageItems = filtered.slice(start, end);
+
+                    pageItems.forEach(m => {
+                        const card = document.createElement('div');
+                        card.className = `movie-card`;
+                        card.id = m.id; // Added for D&D logic
+                        card.onclick = () => {
+                            if (isAdmin) openFormModal(m);
+                            else openModal(m);
+                        };
+                    
+                    // Admin Controls
+                    if (isAdmin) {
+                        card.draggable = true;
+                        card.addEventListener('dragstart', (e) => handleDragStart(e, m.id));
+                        card.addEventListener('dragover', handleDragOver);
+                        card.addEventListener('dragleave', handleDragLeave);
+                        card.addEventListener('drop', (e) => handleDrop(e, m.id));
+                        card.addEventListener('dragend', handleDragEnd);
+                    }
+
+                    const themeLabels = {
+                        'theme_special': 'Maternal Bonds',
+                        'theme_unruly': 'Unruly Woman',
+                        'theme_domestic': 'Domestic',
+                        'theme_body': 'Body Gaze'
+                    };
+                    const tagsHtml = (m.themes || []).map(t => `<span style="display:inline-block; font-size:0.55rem; background:rgba(212,175,55,0.15); color:var(--gold); padding:2px 6px; border-radius:4px; margin-bottom:5px; border:1px solid rgba(212,175,55,0.1); text-transform:uppercase; letter-spacing:0.5px;">${themeLabels[t] || t}</span>`).join(' ');
+
+                    card.innerHTML = `
+                        ${isAdmin ? `
+                        <div class="admin-delete-btn" onclick="deleteMovie(event, '${m.id}')" title="Remove from Library">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </div>
+                        <div class="admin-controls">
+                            <button class="admin-btn" onclick="moveMovie(event, '${m.id}', 'left')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            </button>
+                            <button class="admin-btn" onclick="moveMovie(event, '${m.id}', 'right')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                        </div>` : ''}
+                        <div class="movie-img-container">
+                            <img src="${m.img}" alt="${m.title}" class="movie-img">
+                        </div>
+                        <div class="movie-info">
+                            <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px;">${tagsHtml}</div>
+                            <h3 class="movie-title">${m.title} ${m.title_cn ? `<span style="font-family: var(--font-sans); font-size: 0.8rem; opacity: 0.7; display:block; margin-top:4px;">${m.title_cn}</span>` : ''}</h3>
+                            <p class="movie-meta">${m.dir} • ${m.year}</p>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                renderPagination(totalPages);
+            }, 400); // Wait for slide-out to finish
+        }
+
+        function renderPagination(totalPages) {
+            const container = document.getElementById('pagination');
+            container.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                btn.innerText = i;
+                btn.onclick = () => { 
+                    if (i === currentPage) return;
+                    const direction = i > currentPage ? 'right' : 'left';
+                    currentPage = i; 
+                    renderMovies(direction); 
+                    // Vertical scroll removed as requested
+                };
+                container.appendChild(btn);
+            }
+        }
+
+        document.getElementById('movieSearch').addEventListener('input', (e) => {
+            currentSearch = e.target.value;
+            currentPage = 1;
+            renderMovies();
+        });
+
+        // Tags Removed
+
+        const modalOverlay = document.getElementById('modalOverlay');
+        function openModal(m) {
+            document.querySelector('.modal-title').innerHTML = `${m.title} ${m.title_cn ? `<span style="display: block; font-size: 1.2rem; margin-top: 10px; color: #fff; opacity: 0.7;">${m.title_cn}</span>` : ''}`;
+            document.getElementById('modalDesc').innerText = m.desc;
+            document.getElementById('modalMeta').innerText = `${m.dir} • ${m.year}`;
+            document.getElementById('modalImg').src = m.img;
+            modalOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModalDirect() { modalOverlay.classList.remove('active'); document.body.style.overflow = 'auto'; }
+        function closeModal(e) { if (e.target === modalOverlay) closeModalDirect(); }
+
+        // Background Animation
+        const canvas = document.getElementById('fluidBg');
+        const ctx = canvas.getContext('2d');
+        let width, height, particles = [];
+        const mouse = { x: -1000, y: -1000 };
+        function initCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < 5; i++) {
+                particles.push({
+                    x: Math.random() * width, y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5,
+                    radius: Math.random() * 300 + 200, color: i % 2 === 0 ? 'rgba(40, 40, 40, 0.4)' : 'rgba(20, 20, 20, 0.3)'
+                });
+            }
+        }
+        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        window.addEventListener('resize', initCanvas);
+        function animateBg() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < -p.radius) p.x = width + p.radius; if (p.x > width + p.radius) p.x = -p.radius;
+                if (p.y < -p.radius) p.y = height + p.radius; if (p.y > height + p.radius) p.y = -p.radius;
+                const dx = mouse.x - p.x; const dy = mouse.y - p.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 800) { p.vx += dx * 0.00001; p.vy += dy * 0.00001; }
+                ctx.beginPath();
+                const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
+                gradient.addColorStop(0, p.color); gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient; ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
+            });
+            requestAnimationFrame(animateBg);
+        }
+        initCanvas(); animateBg();
+
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 50) {
+                header.style.padding = "12px 0";
+                header.style.background = "rgba(18, 18, 18, 0.95)";
+            } else {
+                header.style.padding = "20px 0";
+                header.style.background = "rgba(18, 18, 18, 0.85)";
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            init();
+            document.body.classList.add('loaded');
+
+            // Smooth Page Exit Removed
+        });
+    </script>
+    </script>
+</body>
+</html>

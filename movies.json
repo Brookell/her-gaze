@@ -1,0 +1,103 @@
+{
+    "movies": [
+        {
+            "id": "orlando",
+            "img": "images/orlando.jpg",
+            "year": "1992",
+            "dir": "Sally Potter",
+            "title": "Orlando",
+            "title_cn": "奥兰多",
+            "desc": "A visual masterpiece of gender fluidity across 400 years."
+        },
+        {
+            "id": "Delphine and Carole",
+            "img": "images/delphine.jpg",
+            "year": "2019",
+            "dir": "Callisto McNulty",
+            "title": "Delphine and Carole",
+            "title_cn": "德菲因与卡罗尔：反叛缪斯",
+            "desc": "In the 70s and 80s, activist Carole Roussopoulos and actress Delphine Seyrig made use of new video technologies to fight for the women's movement. Archive material documents their interventions into the events of the time."
+        },
+        {
+            "id": "daisies",
+            "img": "images/daisies.jpg",
+            "year": "1966",
+            "dir": "Věra Chytilová",
+            "title": "Daisies",
+            "title_cn": "雏菊",
+            "desc": "An anarchic, surrealist rebellion against societal norms."
+        },
+        {
+            "id": "ladybird",
+            "img": "images/ladybird.jpg",
+            "year": "2017",
+            "dir": "Greta Gerwig",
+            "title": "Lady Bird",
+            "title_cn": "伯德小姐",
+            "desc": "A poignant look at female adolescence and the hunger for more."
+        },
+        {
+            "id": "vagabond",
+            "img": "images/aw.jpg",
+            "year": "1985",
+            "dir": "Agnès Varda",
+            "title": "Vagabond",
+            "title_cn": "流浪者",
+            "desc": "A brutal, poetic portrait of a woman who chooses total freedom."
+        },
+        {
+            "id": "anatomy",
+            "img": "images/anatomy.jpg",
+            "year": "2023",
+            "dir": "Justine Triet",
+            "title": "Anatomy of a Fall",
+            "title_cn": "坠落的审判",
+            "desc": "A dissection of gender roles within a modern marriage."
+        },
+        {
+            "id": "jeanne",
+            "img": "images/Jd.jpg",
+            "year": "1975",
+            "dir": "Chantal Akerman",
+            "title": "Jeanne Dielman",
+            "title_cn": "珍妮·德尔曼",
+            "desc": "The ultimate deconstruction of domestic routine as entrapment."
+        },
+        {
+            "id": "piano",
+            "img": "images/piano.jpg",
+            "year": "1993",
+            "dir": "Jane Campion",
+            "title": "The Piano",
+            "title_cn": "钢琴课",
+            "desc": "A woman's complex will expressed through silence and music."
+        },
+        {
+            "id": "portrait",
+            "img": "images/RS.jpg",
+            "year": "2019",
+            "dir": "Céline Sciamma",
+            "title": "Portrait of a Lady on Fire",
+            "title_cn": "燃烧女子的肖像",
+            "desc": "The female gaze realized as a language of desire."
+        },
+        {
+            "id": "titane",
+            "img": "images/titane.jpg",
+            "year": "2021",
+            "dir": "Julia Ducournau",
+            "title": "Titane",
+            "title_cn": "钛",
+            "desc": "A radical exploration of the body, reproduction, and metal."
+        },
+        {
+            "id": "cleo",
+            "img": "images/aw.jpg",
+            "year": "1962",
+            "dir": "Agnès Varda",
+            "title": "Cléo from 5 to 7",
+            "title_cn": "五至七时的克莱奥",
+            "desc": "Two hours in the life of a woman moving from object to subject."
+        }
+    ]
+}
