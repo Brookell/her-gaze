@@ -479,17 +479,29 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.records && data.records.length > 0) {
-                        const airtableMovies = data.records.map(record => ({
-                            id: record.fields['Movie ID'] || record.id,
-                            title: record.fields['Movie Title'] || 'Untitled',
-                            title_cn: record.fields['Title CN'] || '',
-                            img: record.fields['Image URL'] || '',
-                            year: record.fields['Release Year'] || '',
-                            dir: record.fields['Director'] || '',
-                            desc: record.fields['Description'] || ''
-                        }));
-                        // Merge: Add Airtable movies to the beginning
-                        movies = [...airtableMovies, ...movies];
+                        data.records.forEach(record => {
+                            const cloudMovie = {
+                                id: record.fields['Movie ID'] || record.id,
+                                title: record.fields['Movie Title'] || 'Untitled',
+                                title_cn: record.fields['Title CN'] || '',
+                                img: record.fields['Image URL'] || '',
+                                year: record.fields['Release Year'] || '',
+                                dir: record.fields['Director'] || '',
+                                desc: record.fields['Description'] || ''
+                            };
+                            
+                            const existingIdx = movies.findIndex(m => m.id === cloudMovie.id || m.title === cloudMovie.title);
+                            if (existingIdx !== -1) {
+                                // Smart Merge: Only overwrite with cloud values if they are NOT empty
+                                Object.keys(cloudMovie).forEach(key => {
+                                    if (cloudMovie[key]) {
+                                        movies[existingIdx][key] = cloudMovie[key];
+                                    }
+                                });
+                            } else {
+                                movies.unshift(cloudMovie); // Add new ones to the top
+                            }
+                        });
                     }
                 }
             } catch (error) {
