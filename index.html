@@ -33,7 +33,7 @@
         body { background-color: var(--bg-color); color: var(--text-main); font-family: var(--font-serif); overflow-x: hidden; opacity: 0; transition: opacity 0.8s ease; }
         body.loaded { opacity: 1; }
 
-        canvas#fluidBg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
 
         a { text-decoration: none; color: inherit; transition: var(--transition-smooth); }
         img { display: block; max-width: 100%; }
@@ -276,7 +276,7 @@
     </style>
 </head>
 <body>
-    <canvas id="fluidBg"></canvas>
+
 
     <header>
         <div class="container">
@@ -1487,16 +1487,7 @@
             document.body.classList.add('loaded');
             
             // Canvas Bg
-            const canvas = document.getElementById('fluidBg');
-            const ctx = canvas.getContext('2d');
-            let w, h, ps = [];
-            const m = { x: -1000, y: -1000 };
-            const resize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; ps = []; for(let i=0; i<5; i++) ps.push({ x: Math.random()*w, y: Math.random()*h, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, radius: Math.random()*300+200, color: i%2===0 ? 'rgba(40,40,40,0.3)' : 'rgba(20,20,20,0.2)' }); };
-            window.addEventListener('mousemove', e => { m.x = e.clientX; m.y = e.clientY; });
-            window.addEventListener('resize', resize);
-            resize();
-            const anim = () => { ctx.clearRect(0,0,w,h); ps.forEach(p => { p.x += p.vx; p.y += p.vy; if(p.x < -p.radius) p.x = w+p.radius; if(p.x > w+p.radius) p.x = -p.radius; if(p.y < -p.radius) p.y = h+p.radius; if(p.y > h+p.radius) p.y = -p.radius; const dx = m.x - p.x, dy = m.y - p.y, dist = Math.sqrt(dx*dx+dy*dy); if(dist < 800) { p.vx += dx*0.00001; p.vy += dy*0.00001; } ctx.beginPath(); const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius); g.addColorStop(0, p.color); g.addColorStop(1, 'transparent'); ctx.fillStyle = g; ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill(); }); requestAnimationFrame(anim); };
-            anim();
+
 
             // Reveal
             const revObs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('active'); }), { threshold: 0.1 });
