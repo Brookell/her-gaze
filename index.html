@@ -1101,8 +1101,8 @@
                                     img: record.fields['Image URL'] || '',
                                     year: record.fields['Release Year'] || '',
                                     dir: record.fields['Director'] || '',
-                                    desc: record.fields['Description'] || '',
-                                    themes: parsedThemes
+                                    themes: parsedThemes,
+                                    isRecommended: record.fields['isRecommended'] === true || record.fields['isRecommended'] === "true"
                                 };
                             });
                             allMovies = [...allMovies, ...cloudItems];
@@ -1179,8 +1179,11 @@
             const moreCard = container.querySelector('.movie-more-card');
             container.innerHTML = '';
             
-            // Limit to top 12 for recommended section
-            movies.slice(0, 12).forEach((m, idx) => {
+            // Show Airtable-selected recommendations, or fallback to latest 12
+            let recMovies = movies.filter(m => m.isRecommended);
+            if (recMovies.length === 0) recMovies = movies.slice(0, 12);
+
+            recMovies.forEach((m, idx) => {
                 const card = document.createElement('div');
                 card.className = 'movie-poster-card';
                 card.setAttribute('data-id', m.id); // For surgical DOM updates
