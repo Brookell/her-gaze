@@ -498,10 +498,14 @@
 
             // 3. Optional: Try local movies.json
             try {
-                const localRes = await fetch('movies.json');
+                const localRes = await fetch('./movies.json');
                 const localData = await localRes.json();
                 movies = localData;
-            } catch (err) { console.error("Local data load failed", err); }
+                console.log("Data loaded successfully:", movies.length, "items");
+                renderMovies(); // Explicitly trigger render after fetch
+            } catch (err) { 
+                console.error("Local data load failed", err); 
+            }
 
             // 3. Merge Custom Local Storage Movies (Overrides originals by ID)
             const customMovies = JSON.parse(localStorage.getItem('customMovies') || '[]');
