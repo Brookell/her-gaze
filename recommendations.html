@@ -471,6 +471,7 @@
             // 1. Load local movies.json
             try {
                 const localRes = await fetch('./movies.json');
+                if (!localRes.ok) throw new Error(`HTTP ${localRes.status}`);
                 const localData = await localRes.json();
                 const jsonMovies = localData.movies || localData;
                 allMovies = [...allMovies, ...jsonMovies];
@@ -480,23 +481,25 @@
             try {
                 let offset = '';
                 const encodedTable = encodeURIComponent(AIRTABLE_TABLE_NAME);
-                const baseUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodedTable}?sort%5B0%5D%5Bfield%5D=Release+Year&sort%5B0%5D%5Bdirection%5D=desc`;
+                const baseUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodedTable}`;
                 
                 do {
-                    const paginatedUrl = `${baseUrl}${offset ? `&offset=${offset}` : ''}`;
-                    const response = await fetch(paginatedUrl, {
+                    const params = new URLSearchParams({
+                        'sort[0][field]': 'Release Year',
+                        'sort[0][direction]': 'desc'
+                    });
+                    if (offset) params.append('offset', offset);
+                    
+                    const response = await fetch(`${baseUrl}?${params.toString()}`, {
                         headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` }
                     });
                     
                     if (response.ok) {
                         const data = await response.json();
                         if (data.records && data.records.length > 0) {
-                            // DIAGNOSTIC ALERT: Remove after debugging
-                            if (allCloudRecords.length === 0) {
-                                const firstRecordFields = Object.keys(data.records[0].fields).join(', ');
-                                alert(`Airtable Connected! \nRecords found: ${data.records.length} \nColumns found: ${firstRecordFields}`);
+                            if (allCloudRecordsCount === 0) {
+                                console.log("Airtable Connection Success. Fields:", Object.keys(data.records[0].fields));
                             }
-                            
                             const cloudItems = data.records.map(record => ({
                                 id: record.fields['Movie ID'] || record.id,
                                 title: record.fields['Movie Title'] || 'Untitled',
@@ -507,31 +510,24 @@
                                 desc: record.fields['Description'] || ''
                             }));
                             allMovies = [...allMovies, ...cloudItems];
+                            allCloudRecordsCount += data.records.length;
                         }
                         offset = data.offset || '';
-                    } else { offset = ''; }
+                    } else {
+                        const errorText = await response.text();
+                        console.error(`Airtable Error: ${response.status} - ${errorText}`);
+                        if (response.status === 401 || response.status === 403) {
+                            alert("Airtable API Key might be invalid or revoked by GitHub Security.");
+                        }
+                        offset = ''; 
+                    }
                 } while (offset);
             } catch (error) { console.error("Airtable sync error:", error); }
-
-            // 3. Final Deduplication
-            const uniqueMap = new Map();
-            allMovies.forEach(m => {
-                const key = m.id || m.title;
-                if (key && !uniqueMap.has(key)) uniqueMap.set(key, m);
-            });
-            movies = Array.from(uniqueMap.values());
-
-            // 4. Apply Blacklist
-            const deleted = JSON.parse(localStorage.getItem('deletedFromArchive') || '[]');
-            movies = movies.filter(m => !deleted.includes(m.id));
-
-            renderMovies();
-        }
 
             // 3. Merge Custom Local Storage Movies (Overrides originals by ID)
             const customMovies = JSON.parse(localStorage.getItem('customMovies') || '[]');
             const movieMap = new Map();
-            movies.forEach(m => movieMap.set(m.id, m));
+            allMovies.forEach(m => movieMap.set(m.id, m));
             customMovies.forEach(m => movieMap.set(m.id, m));
             movies = Array.from(movieMap.values());
 
