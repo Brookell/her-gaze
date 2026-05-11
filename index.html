@@ -1317,8 +1317,13 @@
             }
 
             // GLOBAL SEARCH: Search through window.allMovies (Full Library) instead of filtered list
-            const matchedMovies = (window.allMovies || window.movies || movies).filter(m => {
-                const tags = (m.themes || []).map(t => cleanKey(t));
+            const movieSource = window.allMovies || window.movies || movies || [];
+            console.log(`Theme Search [${target}]: Searching in ${movieSource.length} movies.`);
+
+            const matchedMovies = movieSource.filter(m => {
+                const themesArray = m.themes || [];
+                const tags = themesArray.map(t => cleanKey(t));
+                
                 if (tags.includes(target)) return true;
                 
                 // Fallback for special theme (Matching exact UI tag "Maternal Bonds")
@@ -1341,9 +1346,14 @@
                 return false;
             });
             
+            console.log(`Theme Search [${target}]: Found ${matchedMovies.length} matches.`);
             
             if (matchedMovies.length === 0) {
-                showNotification("No films matched this theme in current library sync.", "Curated Theme");
+                if (movieSource.length === 0) {
+                    showNotification("Library is still syncing... Please wait a moment.", "Cinema System");
+                } else {
+                    showNotification("No films matched this theme in current library sync.", "Curated Theme");
+                }
                 return;
             }
 
