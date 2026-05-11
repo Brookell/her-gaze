@@ -1448,20 +1448,32 @@
             document.body.style.overflow = 'hidden';
         }
         function closeModalDirect() { 
+            // 1. PRIORITY: Immediately restore scrolling to both body and root
+            document.body.style.overflow = 'auto';
+            document.documentElement.style.overflow = 'auto';
+            
             const modal = document.getElementById('modalOverlay');
             const card = modal.querySelector('.modal-card');
-            modal.classList.remove('active'); 
-            document.body.style.overflow = 'auto'; 
             
-            // Clear image and reset styles after transition
+            // 2. Visual close
+            modal.classList.remove('active'); 
+            
+            console.log("Modal closing: Scroll restored.");
+
+            // 3. Cleanup after animation
             setTimeout(() => {
                 const modalImg = document.getElementById('modalImg');
                 if (modalImg) {
                     modalImg.src = "";
                     modalImg.style.opacity = "0";
                 }
-                card.classList.remove('full-width');
-            }, 400);
+                if (card) card.classList.remove('full-width');
+                
+                // Final safety check: if modal is not active, body MUST be scrollable
+                if (!modal.classList.contains('active')) {
+                    document.body.style.overflow = 'auto';
+                }
+            }, 450);
         }
         function closeModal(e) { if(e.target.id === 'modalOverlay') closeModalDirect(); }
 
