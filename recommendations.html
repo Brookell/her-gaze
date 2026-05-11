@@ -500,7 +500,7 @@
             try {
                 const localRes = await fetch('./movies.json');
                 const localData = await localRes.json();
-                movies = localData;
+                movies = localData.movies || localData;
                 console.log("Data loaded successfully:", movies.length, "items");
                 renderMovies(); // Explicitly trigger render after fetch
             } catch (err) { 
