@@ -1448,13 +1448,20 @@
             document.body.style.overflow = 'hidden';
         }
         function closeModalDirect() { 
-            document.getElementById('modalOverlay').classList.remove('active'); 
+            const modal = document.getElementById('modalOverlay');
+            const card = modal.querySelector('.modal-card');
+            modal.classList.remove('active'); 
             document.body.style.overflow = 'auto'; 
-            // Clear image and reset opacity immediately on close
+            
+            // Clear image and reset styles after transition
             setTimeout(() => {
-                document.getElementById('modalImg').src = "";
-                document.getElementById('modalImg').style.opacity = "0";
-            }, 300);
+                const modalImg = document.getElementById('modalImg');
+                if (modalImg) {
+                    modalImg.src = "";
+                    modalImg.style.opacity = "0";
+                }
+                card.classList.remove('full-width');
+            }, 400);
         }
         function closeModal(e) { if(e.target.id === 'modalOverlay') closeModalDirect(); }
 
@@ -1555,6 +1562,7 @@
             
             card.classList.add('full-width');
             modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
             wrapper.innerHTML = `
                 <div class="letter-modal-content">
                     <div id="letterBody">${translations.author_letter_en}</div>
@@ -1562,15 +1570,7 @@
             `;
         }
 
-        function closeModalDirect() {
-            const modal = document.getElementById('modalOverlay');
-            const card = modal.querySelector('.modal-card');
-            modal.classList.remove('active');
-            // Reset for other modals
-            setTimeout(() => {
-                card.classList.remove('full-width');
-            }, 400);
-        }
+
     </script>
 </body>
 </html>
