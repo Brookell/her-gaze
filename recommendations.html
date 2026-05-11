@@ -467,18 +467,9 @@
             }
 
             let allCloudRecordsCount = 0;
-            let allMovies = [...LOCAL_FILMS_REGISTRY];
+            let allMovies = []; // Start with empty list to only show Airtable movies
 
-            // 1. Load local movies.json
-            try {
-                const localRes = await fetch('./movies.json');
-                if (!localRes.ok) throw new Error(`HTTP ${localRes.status}`);
-                const localData = await localRes.json();
-                const jsonMovies = localData.movies || localData;
-                allMovies = [...allMovies, ...jsonMovies];
-            } catch (err) { console.error("Local JSON load failed", err); }
-
-            // 2. Fetch ALL from Airtable with full pagination
+            // 1. Fetch ALL from Airtable with full pagination
             try {
                 let offset = '';
                 const encodedTable = encodeURIComponent(AIRTABLE_TABLE_NAME);
