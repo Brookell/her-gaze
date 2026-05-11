@@ -466,70 +466,67 @@
                 if (searchInput) searchInput.value = currentSearch;
             }
 
-            // 1. Start with local registry
-            movies = [...LOCAL_FILMS_REGISTRY];
+            let allMovies = [...LOCAL_FILMS_REGISTRY];
 
-            // 2. Try to fetch Airtable
-            try {
-                const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}?sort%5B0%5D%5Bfield%5D=Release+Year&sort%5B0%5D%5Bdirection%5D=desc`;
-                let offset = '';
-                let allCloudRecords = [];
-                do {
-                    const paginatedUrl = `${url}${offset ? `&offset=${offset}` : ''}`;
-                    const response = await fetch(paginatedUrl, {
-                        headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` }
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        allCloudRecords = [...allCloudRecords, ...data.records];
-                        offset = data.offset || '';
-                    } else { offset = ''; }
-                } while (offset);
-
-                if (allCloudRecords.length > 0) {
-                    allCloudRecords.forEach(record => {
-                        const cloudMovie = {
-                            id: record.fields['Movie ID'] || record.id,
-                            title: record.fields['Movie Title'] || 'Untitled',
-                            title_cn: record.fields['Title CN'] || '',
-                            img: record.fields['Image URL'] || '',
-                            year: record.fields['Release Year'] || '',
-                            dir: record.fields['Director'] || '',
-                            desc: record.fields['Description'] || ''
-                        };
-                        
-                        const existingIdx = movies.findIndex(m => m.id === cloudMovie.id || m.title === cloudMovie.title);
-                        if (existingIdx !== -1) {
-                            // Smart Merge: Only overwrite with cloud values if they are NOT empty
-                            Object.keys(cloudMovie).forEach(key => {
-                                if (cloudMovie[key]) {
-                                    movies[existingIdx][key] = cloudMovie[key];
-                                }
-                            });
-                        } else {
-                            movies.unshift(cloudMovie); // Add new ones to the top
-                        }
-                    });
-                }
-            } catch (error) {
-                console.warn("Airtable fetch failed.");
-            }
-
-            // 3. Optional: Try local movies.json
+            // 1. Load local movies.json
             try {
                 const localRes = await fetch('./movies.json');
                 const localData = await localRes.json();
                 const jsonMovies = localData.movies || localData;
-                jsonMovies.forEach(m => {
-                    const idx = movies.findIndex(ex => ex.id === m.id);
-                    if (idx !== -1) movies[idx] = { ...movies[idx], ...m };
-                    else movies.push(m);
-                });
-                console.log("Data loaded successfully:", movies.length, "items");
-                renderMovies(); // Explicitly trigger render after fetch
-            } catch (err) { 
-                console.error("Local data load failed", err); 
-            }
+                allMovies = [...allMovies, ...jsonMovies];
+            } catch (err) { console.error("Local JSON load failed", err); }
+
+            // 2. Fetch ALL from Airtable with full pagination
+            try {
+                let offset = '';
+                const encodedTable = encodeURIComponent(AIRTABLE_TABLE_NAME);
+                const baseUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodedTable}?sort%5B0%5D%5Bfield%5D=Release+Year&sort%5B0%5D%5Bdirection%5D=desc`;
+                
+                do {
+                    const paginatedUrl = `${baseUrl}${offset ? `&offset=${offset}` : ''}`;
+                    const response = await fetch(paginatedUrl, {
+                        headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.records && data.records.length > 0) {
+                            // DIAGNOSTIC ALERT: Remove after debugging
+                            if (allCloudRecords.length === 0) {
+                                const firstRecordFields = Object.keys(data.records[0].fields).join(', ');
+                                alert(`Airtable Connected! \nRecords found: ${data.records.length} \nColumns found: ${firstRecordFields}`);
+                            }
+                            
+                            const cloudItems = data.records.map(record => ({
+                                id: record.fields['Movie ID'] || record.id,
+                                title: record.fields['Movie Title'] || 'Untitled',
+                                title_cn: record.fields['Title CN'] || '',
+                                img: record.fields['Image URL'] || '',
+                                year: record.fields['Release Year'] || '',
+                                dir: record.fields['Director'] || '',
+                                desc: record.fields['Description'] || ''
+                            }));
+                            allMovies = [...allMovies, ...cloudItems];
+                        }
+                        offset = data.offset || '';
+                    } else { offset = ''; }
+                } while (offset);
+            } catch (error) { console.error("Airtable sync error:", error); }
+
+            // 3. Final Deduplication
+            const uniqueMap = new Map();
+            allMovies.forEach(m => {
+                const key = m.id || m.title;
+                if (key && !uniqueMap.has(key)) uniqueMap.set(key, m);
+            });
+            movies = Array.from(uniqueMap.values());
+
+            // 4. Apply Blacklist
+            const deleted = JSON.parse(localStorage.getItem('deletedFromArchive') || '[]');
+            movies = movies.filter(m => !deleted.includes(m.id));
+
+            renderMovies();
+        }
 
             // 3. Merge Custom Local Storage Movies (Overrides originals by ID)
             const customMovies = JSON.parse(localStorage.getItem('customMovies') || '[]');
